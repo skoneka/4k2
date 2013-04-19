@@ -28,10 +28,24 @@ def main(url, feed_nums, xpath, ):
   _html = urllib2.urlopen(url).read()
   _xpath = xpath
 
-  pool_size = multiprocessing.cpu_count() * 2
-  pool = multiprocessing.Pool(processes=pool_size)
+  #pool_size = multiprocessing.cpu_count() * 2
+  #pool = multiprocessing.Pool(processes=pool_size)
 
-  o = pool.map(get_el, feed_nums)
+  #o = pool.map(get_el, feed_nums)
+
+  tree = etree.XML(_html)
+  items = tree.xpath('channel/item')
+  els = tree.xpath(_xpath)
+  feed_num = data
+  try:
+    print(els[feed_num])
+    return els[feed_num]
+  except IndexError:
+    sys.stderr.write('No such element %d\n' % data);
+    return None
+
+  
+  
   print o
   return o
   
