@@ -4,10 +4,10 @@
 # 2013 Artur Skonecki
 
 '''
-An implementation of a program serving extracts of contents
-of articles in rss feed over zmq sockets using json as data format.
-This implementation uses MPI for speeding up execution
-so it is taking advantage of concurrency features of modern systems.
+A program serving extracts of contents of articles in rss feed over zmq
+sockets using json as data format.  This implementation uses MPI for
+speeding up execution so it is taking advantage of concurrency features
+of modern systems.
 '''
 
 PORT = 5556
