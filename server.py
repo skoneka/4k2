@@ -6,6 +6,8 @@
 '''
 An implementation of a program serving extracts of contents
 of articles in rss feed over zmq sockets using json as data format.
+This implementation uses MPI for speeding up execution
+so it is taking advantage of concurrency features of modern systems.
 '''
 
 import json
@@ -58,7 +60,15 @@ def extract( xml, article_nums, xpath ):
   # get all extracts form RANKs
   extracts = COMM.gather( rank_article_extracts, root = 0 )
 
-  return extracts
+  # join returned dicts in extracts into a single dict
+  if RANK == 0:
+    nextracts = {}
+    for d in extracts:
+      nextracts.update(d)
+  else:
+    nextracts = None
+
+  return nextracts
 
 
 def server( port ):
