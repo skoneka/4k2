@@ -7,7 +7,8 @@
 An implementation of a client:
 - request from server extracts of contents of articles in rss feed
 - fetch the response
-- write results to a dummy database: TExtract( url, xpath, contents ) |one-to-many| TContent( content )
+- write results to a dummy database:
+  TExtract( url, xpath, contents ) |one-to-many| TContent( content )
 - print out database 
 Uses json as data format.
 ZeroMQ is deployed for communication between client and server.
@@ -21,72 +22,7 @@ import zmq
 
 from optparse import OptionParser
 
-from sqlalchemy import *
-from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy.orm import relation, sessionmaker, relationship, backref
-
-Base = declarative_base()
-
-
-class TExtract(Base):
-  __tablename__ = 'extracts'
-
-  id = Column(Integer, primary_key=True)
-
-  url = Column(String(255), nullable=False)
-  xpath = Column(String(255), nullable=False)
-  #content = Column(String(1023))
-  contents = relationship("TContent", backref="extracts")
-  #directed_by = Column(Intger, ForeignKey('directors.id'))
-
-  #director = relation("Director", backref='movies', lazy=False)
-
-  def __init__(self, url=None, xpath=None, contents=None):
-    self.url = url
-    self.xpath = xpath
-    print 'wut'
-    for item in contents:
-      print 'adding ' + str( item )
-      self.contents.append( TContent( item ) )
-  def __repr__(self):
-    return "TExtract(%r, %r, %r)" % ( self.url, self.xpath, self.contents )
-
-class TContent(Base):
-  __tablename__ = 'contents'
-  cid = Column(Integer, primary_key=True)
-  parent_id = Column(Integer, ForeignKey('extracts.id'))
-  content = Column(String(1023))
-  
-  def __init__(self, content=None):
-    self.content = content
-
-  def __repr__(self):
-    return "TContent(%r)" % ( self.content )
-
-
-
-def setup_db( db ):
-  engine = create_engine( db )
-  Base.metadata.create_all( engine )
-
-  Session = sessionmaker(bind=engine)
-  session = Session()
-  return session
-
-def write_db( session, url, xpath, extracts ):
-  try:
-    for content in extracts.itervalues():
-      print content
-      session.add( TExtract( url, xpath, content ) )
-    session.commit()
-  except:
-    session.rollback()
-    raise
-
-def print_db(session):
-  alldata = session.query(TExtract).all()
-  for somedata in alldata:
-    print somedata
+import dbsupport
 
 # Connect to a server over zmq socket. Send a request for contents (xpath)
 # from specific articles (article_nums) published on a rss feed (url).
@@ -146,16 +82,13 @@ def main():
     options.xpath )
 
 
-  session = setup_db( 'sqlite:///:memory:' )
+  dba = dbsupport.DbSupport( 'sqlite:///:memory:' )
 
-  write_db( session,
-    options.url,
+  dba.write( options.url,
     options.xpath,
     extracts )
 
-  print_db( session )
-
-  #print( "Extracts " + str( extracts ) )
+  dba.print_db()
 
 if __name__ == '__main__':
   main()

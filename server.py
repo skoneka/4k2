@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
+# Example usage: mpiexec -n 3 python server.py
 # python <3
 # 2013 Artur Skonecki
-# Example usage: mpiexec -n 3 python server.py
 
 '''
 An implementation of a program serving extracts of contents
