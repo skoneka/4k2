@@ -13,7 +13,11 @@ mpiexec -n 3 python server.py
 Send requests with client:
 python client.py \
 -f http://feeds.feedburner.com/TechCrunch \
--n 2,5,6,9,10 -s category'
+-n 2,5,6,9,10 -s category[1]
+
+python client.py \
+-f file://`pwd`/rss/TechCrunch.rss
+-n 2,5,6,9,10 -s title
 
 Hacking
 =======
