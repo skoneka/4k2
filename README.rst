@@ -1,5 +1,9 @@
 4k2 demonstrates concurrent XML xpath extraction. By Artur Skonecki.
 
+Requirements
+============
+mpi4py pyzmq sqlalchemy
+
 Deployment
 ==========
 

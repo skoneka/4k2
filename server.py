@@ -18,7 +18,9 @@ import zmq
 
 from lxml import etree
 from mpi4py import MPI
+import logging
 
+logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
 def extract( xml, article_nums, xpath ):
   '''extract( xml, article_nums, xpath ) -> dict
@@ -50,8 +52,12 @@ def extract( xml, article_nums, xpath ):
   for article_num in slice_of_article_nums:
     article_extracts = []
     # extract contents from every artile based on xpath
-    for item in items[ article_num ].xpath( xpath ):
-      article_extracts.append(item.text)
+    try:
+      for item in items[ article_num ].xpath( xpath ):
+        article_extracts.append(item.text)
+    except etree.XPathEvalError:
+      logging.error('Invalid xpath')
+      pass
     rank_article_extracts[ article_num ] = article_extracts
 
   ## print out extracts of articles for the current RANK
@@ -107,7 +113,7 @@ def server( port ):
       message = socket.recv()
       jdata = json_decoder.decode( message )
       xml = urllib2.urlopen( jdata['url'] ).read()
-      print( "Received json: " + str( jdata ) )
+      logging.info( "Received json: " + str( jdata ) )
 
     # send data to other RANKs
     jdata = COMM.bcast( jdata, root=0 )
@@ -121,7 +127,7 @@ def server( port ):
 
     # send extracts of articles down the pipe
     if RANK == 0:
-      print( 'Sending extracts ' + str( extracts ) )
+      logging.info( 'Sending extracts ' + str( extracts ) )
       jdata = json.dumps( extracts )
       socket.send( jdata )
 
