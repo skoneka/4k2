@@ -12,18 +12,19 @@ def main(url, feed_nums, xpath, ):
   socket = context.socket(zmq.REQ)
   socket.connect ("tcp://localhost:%s" % port)
   
-  #  Do 10 requests, waiting each time for a response
-  for request in range (1,10):
-    print "Sending request ", request,"..."
-    jdata = json.dumps({
-      "url":url,
-      "feed_nums": feed_nums,
-      "xpath": xpath
-      })
-    socket.send (jdata)
-    #  Get the reply.
-    message = socket.recv()
-    print "Received reply ", request, "[", message, "]"
+  jdata = json.dumps({
+    "url":url,
+    "feed_nums": feed_nums,
+    "xpath": xpath
+    })
+  print "Sending request ", jdata,"..."
+  socket.send (jdata)
+  
+  #  Get the reply.
+  message = socket.recv()
+  jsonDecoder = json.JSONDecoder()
+  jdata_reply = jsonDecoder.decode(message)
+  print( "Received reply " + str( jdata_reply ) )
 
 #end main
 
