@@ -64,8 +64,8 @@ def extract( xml, article_nums, xpath ):
   # join returned dicts in extracts into a single dict
   if RANK == 0:
     nextracts = {}
-    for d in extracts:
-      nextracts.update(d)
+    for data in extracts:
+      nextracts.update(data)
   else:
     nextracts = None
 

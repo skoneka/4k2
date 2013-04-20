@@ -43,14 +43,14 @@ class TContent(Base):
 
 class DbSupport( object ):
 
-  def __init__( self, db ):
+  def __init__( self, dba ):
     '''Contruct a new ``DbSupport`` object
 
-    :param db: specify database for SqlAlchemy
+    :param dba: specify database for SqlAlchemy
       e.g.:
         DbSupport( 'sqlite:///:memory:' )
     '''
-    engine = create_engine( db )
+    engine = create_engine( dba )
     Base.metadata.create_all( engine )
 
     Session = sessionmaker(bind=engine)
@@ -58,6 +58,7 @@ class DbSupport( object ):
     
 
   def write( self, url, xpath, extracts ):
+    '''Write records to database'''
     try:
       for content in extracts.itervalues():
         print content
@@ -68,6 +69,7 @@ class DbSupport( object ):
       raise
 
   def print_db( self ):
+    '''Print out all TExtract records'''
     alldata = self.session.query(TExtract).all()
-    for somedata in alldata:
-      print somedata
+    for data in alldata:
+      print( data )

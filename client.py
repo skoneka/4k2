@@ -81,7 +81,6 @@ def main():
     [ int( x ) for x in options.article_nums.split( ',' ) ],
     options.xpath )
 
-
   dba = dbsupport.DbSupport( 'sqlite:///:memory:' )
 
   dba.write( options.url,
