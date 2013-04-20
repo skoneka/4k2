@@ -10,6 +10,8 @@ This implementation uses MPI for speeding up execution
 so it is taking advantage of concurrency features of modern systems.
 '''
 
+PORT = 5556
+
 import json
 import urllib2
 import zmq
@@ -17,7 +19,6 @@ import zmq
 from lxml import etree
 from mpi4py import MPI
 
-PORT = 5556
 
 def extract( xml, article_nums, xpath ):
   '''extract( xml, article_nums, xpath ) -> dict

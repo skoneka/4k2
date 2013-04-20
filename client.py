@@ -4,22 +4,71 @@
 # 2013 Artur Skonecki
 
 """
-An implementation of a client requesting extracts of contents of articles
-in rss feed and fetching the response back over zmq sockets using json
-as data format.
+An implementation of a client requesting  from server extracts of contents
+of articles in rss feed and fetching the response back over zmq sockets
+using json as data format.
 """
+
+PORT = "5556"
 
 import json
 import zmq
 
 from optparse import OptionParser
 
-PORT = "5556"
+from sqlalchemy import *
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import relation, sessionmaker
 
+Base = declarative_base()
+
+class Extract(Base):
+  __tablename__ = 'extracts'
+  
+  id = Column(Integer, primary_key=True)
+
+  url = Column(String(255), nullable=False)
+  xpath = Column(String(255), nullable=False)
+  content = Column(String(1023))
+  #directed_by = Column(Intger, ForeignKey('directors.id'))
+  
+  #director = relation("Director", backref='movies', lazy=False)
+  
+  def __init__(self, url=None, xpath=None, content=None):
+    self.url = url
+    self.xpath = xpath
+    self.content = content
+  def __repr__(self):
+    return "Extract(%r, %r, %r)" % ( self.url, self.xpath, self.content )
+
+
+def setup_db( db ):
+  engine = create_engine( db )
+  Base.metadata.create_all( engine )
+
+  Session = sessionmaker(bind=engine)
+  session = Session()
+  return session
+
+def write_db( session, url, xpath, extracts ):
+  try:
+    for content in extracts.itervalues():
+      print content
+      content = 'aaa'
+      session.add( Extract( url, xpath, content ) )
+    session.commit()
+  except:
+    session.rollback()
+    raise
+
+def print_db(session):
+  alldata = session.query(Extract).all()
+  for somedata in alldata:
+    print somedata
 
 # Connect to a server over zmq socket. Send a request for contents (xpath)
-# from specific articles (article_nums) published on a rss feed (url). Fetch
-# the reponse back.
+# from specific articles (article_nums) published on a rss feed (url).
+# Fetch the reponse back.
 def get_article_extracts( port, url, article_nums, xpath ):
   '''get_article_extracts( port, url, article_nums, xpath ) -> dict
 
@@ -48,7 +97,7 @@ def get_article_extracts( port, url, article_nums, xpath ):
   return jdata_reply
 
 def main():
-  '''main'''
+  '''main()'''
   parser = OptionParser(
     usage = 'Usage: python client.py \
 -f http://feeds.feedburner.com/TechCrunch \
@@ -74,7 +123,17 @@ def main():
     [ int( x ) for x in options.article_nums.split( ',' ) ],
     options.xpath )
 
-  print( "Extracts " + str( extracts ) )
+
+  session = setup_db( 'sqlite:///:memory:' )
+
+  write_db( session,
+    options.url,
+    options.xpath,
+    extracts )
+
+  print_db( session )
+
+  #print( "Extracts " + str( extracts ) )
 
 if __name__ == '__main__':
   main()
