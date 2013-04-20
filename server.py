@@ -1,104 +1,89 @@
-import zmq
-import time
-import sys
+# -*- coding: utf-8 -*-
+# python <3
+# 2013 Artur Skonecki
+
 import json
-from mpi4py import MPI
-from lxml import etree
+import sys
+import time
 import urllib2
+import zmq
 
+from lxml import etree
+from mpi4py import MPI
 
+port = 5556
 
-def main():
-  port = "5556"
+def main( port ):
   if rank == 0:
     jsonDecoder = json.JSONDecoder()
 
-    if len(sys.argv) > 1:
-      port =  sys.argv[1]
-      int(port)
-
+    # set up a socket for communication with clients
     context = zmq.Context()
-    socket = context.socket(zmq.REP)
-    socket.bind("tcp://*:%s" % port)
+    socket = context.socket( zmq.REP )
+    socket.bind( "tcp://*:%s" % port )
 
   while True:
     jdata = None
     xml = None
     if rank == 0:
-      #  Wait for next request from client
+      #  Wait for next json request from client
       message = socket.recv()
-      jdata = jsonDecoder.decode(message)
-      xml = urllib2.urlopen(jdata['url']).read()
+      jdata = jsonDecoder.decode( message )
+      xml = urllib2.urlopen( jdata['url'] ).read()
+      print( "Received json: " + str( jdata ) )
 
+    # send data to other ranks
+    jdata = comm.bcast( jdata, root=0 )
+    xml = comm.bcast( xml, root=0 )
 
-      #for i in range(1,size):
-        #comm.send(jdata, dest = i, tag = 1 * i)
-        #comm.send(xml, dest = i, tag = 11 * i)
-        
-      #comm.isend(jdata, dest = 2, tag = 2)
-      #comm.isend(xml, dest = 2, tag = 22)
-      #comm.isend(jdata, dest = 3, tag = 3)
-      #comm.isend(xml, dest = 3, tag = 33)
-      print "Received json: ", jdata
-      #time.sleep (1)
+    article_nums = jdata[ 'article_nums' ]
+    xpath = jdata[ 'xpath' ]
 
+    # extracts items containing articles
+    tree = etree.XML( xml )
+    items = tree.xpath( 'channel/item' )
 
-    jdata = comm.bcast(jdata, root=0)
-    xml = comm.bcast(xml, root=0)
-    
-    feed_nums = jdata['feed_nums']
-    xpath = jdata['xpath']
-    
-    tree = etree.XML(xml)
-    items = tree.xpath('channel/item')
+    # divide articles between ranks for processing
+    basic_range_width = len( article_nums ) / size
+    extended_range_width = len( article_nums ) % size
 
-    basic_range_width = len( feed_nums ) / size
-    extended_range_width = len( feed_nums ) % size
+    slice_of_article_nums = article_nums[ rank * basic_range_width : ( rank + 1 ) * basic_range_width ]
 
-    slice_of_feed_nums = feed_nums[ rank * basic_range_width : ( rank + 1 ) * basic_range_width ]
-
+    # assign the remainder of articles to rank 0
     if rank == 0:
-      slice_of_feed_nums += feed_nums[ size * basic_range_width : size* basic_range_width + extended_range_width ]
-      #print( "e %d : %d %d / %d" % (rank, size * basic_range_width , size* basic_range_width + extended_range_width, len( feed_nums )))
+      slice_of_article_nums += article_nums[ size * basic_range_width : size* basic_range_width + extended_range_width ]
 
+    # contains extracts from articles for a given xpath in a rank
+    # e.g. rank 0 articles {1: ['Gadgets'], 4: ['TC'], 5: ['Mobile']}
+    rank_article_extracts = {}
 
-    #print( "%d : %d %d / %d" % (rank, rank * basic_range_width , ( rank + 1 ) * basic_range_width, len( feed_nums )))
+    for article_num in slice_of_article_nums:
+      article_extracts = []
+      # extract contents from every artile based on xpath
+      for item in items[ article_num ].xpath( xpath ):
+        article_extracts.append(item.text)
+      rank_article_extracts[ article_num ] = article_extracts
 
+    ## print out extracts of articles for the current rank
+    #print( 'rank ' + str( rank ) + ' articles ' + str( rank_article_extracts ) )
 
-    rank_articles = {}
-    
-    for feed_num in slice_of_feed_nums:
-      article_items = []
-      #print items[ feed_num ].xpath( xpath )[0].text
-      for item in items[ feed_num ].xpath( xpath ):
-        article_items.append(item.text)
-      #print( item.xpath( jdata['xpath'] ) )
-      rank_articles[ feed_num ] = article_items
+    # get all extracts form ranks 
+    extracts = comm.gather( rank_article_extracts, root = 0 )
 
-    print( 'rank ' + str( rank ) + ' articles ' + str( rank_articles ) )
-
-    articles = comm.gather( rank_articles, root = 0 )
-
+    # send extracts of articles down the pipe
     if rank == 0:
-      print( 'articles ' + str( articles ) )
-      jdata = json.dumps(articles)
-      socket.send (jdata)
-      #socket.send("World from %s" % port)
-      
+      print( 'Sending extracts ' + str( extracts ) )
+      jdata = json.dumps( extracts )
+      socket.send( jdata )
 
-      
-    #print items
-    jdata = None
-    #jdata = comm.bcast(jdata, root=0)
-    
-    print('B job %d/%d data' %(rank, size))
-    comm.Barrier()
-    print('aB job %d/%d data' %(rank, size))
 
-  
 if __name__ == '__main__':
+  if len( sys.argv ) > 1:
+    port =  int( sys.argv[1] )
 
+  # initialize MPI
   comm = MPI.COMM_WORLD
   size = comm.Get_size()
   rank = comm.Get_rank()
-  main()
+  
+  main( port )
