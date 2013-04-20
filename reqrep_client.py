@@ -35,7 +35,7 @@ if __name__ == '__main__':
   parser.add_option("-f", None,
     action="store", # optional because action defaults to "store"
     dest="url",
-    default="file:///home/lab/k2/test.html")
+    default="file:///home/lab/k2/TechCrunch.rss")
   parser.add_option("-n", None,
     action="store", # optional because action defaults to "store"
     dest="feed_nums",
