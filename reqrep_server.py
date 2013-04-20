@@ -30,6 +30,7 @@ def main():
       jdata = jsonDecoder.decode(message)
       xml = urllib2.urlopen(jdata['url']).read()
 
+
       #for i in range(1,size):
         #comm.send(jdata, dest = i, tag = 1 * i)
         #comm.send(xml, dest = i, tag = 11 * i)
@@ -45,25 +46,43 @@ def main():
     jdata = comm.bcast(jdata, root=0)
     xml = comm.bcast(xml, root=0)
     
+    feed_nums = jdata['feed_nums']
+    xpath = jdata['xpath']
+    
     tree = etree.XML(xml)
     items = tree.xpath('channel/item')
 
-    basic_range_width = len( items ) / size
-    extended_range_width = len( items ) % size
+    basic_range_width = len( feed_nums ) / size
+    extended_range_width = len( feed_nums ) % size
 
-    basic_slice = items[ rank * basic_range_width : ( rank + 1 ) * basic_range_width ]
+    slice_of_feed_nums = feed_nums[ rank * basic_range_width : ( rank + 1 ) * basic_range_width ]
 
     if rank == 0:
-      basic_slice += items[ size * basic_range_width : size* basic_range_width + extended_range_width ]
-      print( "e %d : %d %d / %d" % (rank, size * basic_range_width , size* basic_range_width + extended_range_width, len( items )))
+      slice_of_feed_nums += feed_nums[ size * basic_range_width : size* basic_range_width + extended_range_width ]
+      #print( "e %d : %d %d / %d" % (rank, size * basic_range_width , size* basic_range_width + extended_range_width, len( feed_nums )))
 
 
-    print( "%d : %d %d / %d" % (rank, rank * basic_range_width , ( rank + 1 ) * basic_range_width, len( items )))
+    #print( "%d : %d %d / %d" % (rank, rank * basic_range_width , ( rank + 1 ) * basic_range_width, len( feed_nums )))
 
-    for item in basic_slice:
-      print item
-      print( item.xpath( jdata['xpath'] ) )
 
+    rank_articles = {}
+    
+    for feed_num in slice_of_feed_nums:
+      article_items = []
+      #print items[ feed_num ].xpath( xpath )[0].text
+      for item in items[ feed_num ].xpath( xpath ):
+        article_items.append(item.text)
+      #print( item.xpath( jdata['xpath'] ) )
+      rank_articles[ feed_num ] = article_items
+
+    print( 'rank ' + str( rank ) + ' articles ' + str( rank_articles ) )
+
+    articles = comm.gather( rank_articles, root = 0 )
+
+    if rank == 0:
+      print( 'articles ' + str( articles ) )
+
+      
     #print items
     jdata = None
     #jdata = comm.bcast(jdata, root=0)
