@@ -1,21 +1,87 @@
 # -*- coding: utf-8 -*-
 # python <3
 # 2013 Artur Skonecki
+# Example usage: mpiexec -n 3 python server.py
+
+'''
+An implementation of a program serving extracts of contents
+of articles in rss feed over zmq sockets using json as data format.
+'''
 
 import json
-import sys
-import time
 import urllib2
 import zmq
 
 from lxml import etree
 from mpi4py import MPI
 
-port = 5556
+PORT = 5556
 
-def main( port ):
-  if rank == 0:
-    jsonDecoder = json.JSONDecoder()
+def extract( xml, article_nums, xpath ):
+  '''extract( xml, article_nums, xpath ) -> dict
+
+  Return a dict containing article extracts.
+  '''
+
+  # extract items containing articles
+  tree = etree.XML( xml )
+  items = tree.xpath( 'channel/item' )
+
+  # divide articles between RANKs for processing
+  basic_range_width = len( article_nums ) / SIZE
+  extended_range_width = len( article_nums ) % SIZE
+
+  slice_of_article_nums = article_nums[
+    RANK * basic_range_width : ( RANK + 1 ) * basic_range_width ]
+
+  # assign the remainder of articles to RANK 0
+  if RANK == 0:
+    slice_of_article_nums += article_nums[
+      SIZE * basic_range_width :
+      SIZE * basic_range_width + extended_range_width ]
+
+  # contains extracts from articles for a given xpath in a RANK
+  # e.g. RANK 0 articles {1: ['Gadgets'], 4: ['TC'], 5: ['Mobile']}
+  rank_article_extracts = {}
+
+  for article_num in slice_of_article_nums:
+    article_extracts = []
+    # extract contents from every artile based on xpath
+    for item in items[ article_num ].xpath( xpath ):
+      article_extracts.append(item.text)
+    rank_article_extracts[ article_num ] = article_extracts
+
+  ## print out extracts of articles for the current RANK
+  #print( 'RANK ' + str( RANK ) +
+  #  ' articles ' + str( rank_article_extracts ) )
+
+  # get all extracts form RANKs
+  extracts = COMM.gather( rank_article_extracts, root = 0 )
+
+  return extracts
+
+
+def server( port ):
+  '''server( port )
+
+  Start a server listening for connections with zmq socket at 'port'
+  for json requests from clients.
+
+  Request fromat:
+  {
+  "url":url,
+  "article_nums": article_nums,
+  "xpath": xpath
+  }
+
+  Reply format:
+  {
+  "article number' : list of extracted items,
+  ...
+  }
+  '''
+  if RANK == 0:
+    json_decoder = json.JSONDecoder()
 
     # set up a socket for communication with clients
     context = zmq.Context()
@@ -25,65 +91,38 @@ def main( port ):
   while True:
     jdata = None
     xml = None
-    if rank == 0:
-      #  Wait for next json request from client
+    if RANK == 0:
+      #  Wait for a next json request from clients and decode json
       message = socket.recv()
-      jdata = jsonDecoder.decode( message )
+      jdata = json_decoder.decode( message )
       xml = urllib2.urlopen( jdata['url'] ).read()
       print( "Received json: " + str( jdata ) )
 
-    # send data to other ranks
-    jdata = comm.bcast( jdata, root=0 )
-    xml = comm.bcast( xml, root=0 )
+    # send data to other RANKs
+    jdata = COMM.bcast( jdata, root=0 )
+    xml = COMM.bcast( xml, root=0 )
 
     article_nums = jdata[ 'article_nums' ]
     xpath = jdata[ 'xpath' ]
 
-    # extracts items containing articles
-    tree = etree.XML( xml )
-    items = tree.xpath( 'channel/item' )
-
-    # divide articles between ranks for processing
-    basic_range_width = len( article_nums ) / size
-    extended_range_width = len( article_nums ) % size
-
-    slice_of_article_nums = article_nums[ rank * basic_range_width : ( rank + 1 ) * basic_range_width ]
-
-    # assign the remainder of articles to rank 0
-    if rank == 0:
-      slice_of_article_nums += article_nums[ size * basic_range_width : size* basic_range_width + extended_range_width ]
-
-    # contains extracts from articles for a given xpath in a rank
-    # e.g. rank 0 articles {1: ['Gadgets'], 4: ['TC'], 5: ['Mobile']}
-    rank_article_extracts = {}
-
-    for article_num in slice_of_article_nums:
-      article_extracts = []
-      # extract contents from every artile based on xpath
-      for item in items[ article_num ].xpath( xpath ):
-        article_extracts.append(item.text)
-      rank_article_extracts[ article_num ] = article_extracts
-
-    ## print out extracts of articles for the current rank
-    #print( 'rank ' + str( rank ) + ' articles ' + str( rank_article_extracts ) )
-
-    # get all extracts form ranks 
-    extracts = comm.gather( rank_article_extracts, root = 0 )
+    # do the magic - extract contents from articles based on xpath
+    extracts = extract( xml, article_nums, xpath )
 
     # send extracts of articles down the pipe
-    if rank == 0:
+    if RANK == 0:
       print( 'Sending extracts ' + str( extracts ) )
       jdata = json.dumps( extracts )
       socket.send( jdata )
 
 
+
 if __name__ == '__main__':
-  if len( sys.argv ) > 1:
-    port =  int( sys.argv[1] )
 
   # initialize MPI
-  comm = MPI.COMM_WORLD
-  size = comm.Get_size()
-  rank = comm.Get_rank()
-  
-  main( port )
+  COMM = MPI.COMM_WORLD
+  SIZE = COMM.Get_size()
+  RANK = COMM.Get_rank()
+
+  server( PORT )
+
+
