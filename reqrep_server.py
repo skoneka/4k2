@@ -41,7 +41,7 @@ def main():
       #comm.isend(xml, dest = 3, tag = 33)
       print "Received json: ", jdata
       #time.sleep (1)
-      socket.send("World from %s" % port)
+
 
     jdata = comm.bcast(jdata, root=0)
     xml = comm.bcast(xml, root=0)
@@ -81,6 +81,10 @@ def main():
 
     if rank == 0:
       print( 'articles ' + str( articles ) )
+      jdata = json.dumps(articles)
+      socket.send (jdata)
+      #socket.send("World from %s" % port)
+      
 
       
     #print items
