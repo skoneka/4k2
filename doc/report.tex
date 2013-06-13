@@ -53,9 +53,11 @@ The architecture.
 
 \subsection{Data format}
 
-  Format request sent by client to server:
+  Format request sent by client to server (inludes authentication tokens: appid, appkey):
   \begin{verbatim}
   {
+  "appid":appid,
+  "appkey":appkey
   "url":url,
   "article_nums": article_nums,
   "xpath": xpath
@@ -78,7 +80,7 @@ The architecture.
 A program serving extracts of contents of articles in rss feed over zmq
 sockets using json as data format.  This implementation uses MPI for
 speeding up execution so it is taking advantage of concurrency features
-of modern systems.
+of modern systems. Server requires authentication tokens appid and appkey.
 
 \begin{verbatim}
 server( port )
@@ -161,22 +163,28 @@ mpirun -np 4 --hostfile ~/hostfile python server.py
 \end{alltt}
 
 Extracting articles from a remote rss feed.
-\begin{alltt}
+\begin{verbatim}
  python client.py \
 -H 192.168.0.17 \
 -f http://feeds.feedburner.com/TechCrunch \
 -n 2,5,6,9,10 -s category[1]
-\end{alltt}
+\end{verbatim}
 
 Example client output. 
-\begin{alltt}
-Sending request {"url": "http://feeds.feedburner.com/TechCrunch", "xpath": "category[1]", "article_nums": [2, 5, 6, 9, 10]}
-TExtract(u'http://feeds.feedburner.com/TechCrunch', u'category[1]', [TContent(u'Fundings & Exits')])
-TExtract(u'http://feeds.feedburner.com/TechCrunch', u'category[1]', [TContent(u'Startups')])
-TExtract(u'http://feeds.feedburner.com/TechCrunch', u'category[1]', [TContent(u'Social')])
-TExtract(u'http://feeds.feedburner.com/TechCrunch', u'category[1]', [TContent(u'Enterprise')])
-TExtract(u'http://feeds.feedburner.com/TechCrunch', u'category[1]', [TContent(u'TC')])
-\end{alltt}
+\begin{verbatim}
+Sending request {"url": "http://feeds.feedburner.com/TechCrunch",
+  "xpath": "category[1]", "article_nums": [2, 5, 6, 9, 10]}
+TExtract(u'http://feeds.feedburner.com/TechCrunch', 
+  u'category[1]', [TContent(u'Fundings & Exits')])
+TExtract(u'http://feeds.feedburner.com/TechCrunch', 
+  u'category[1]', [TContent(u'Startups')])
+TExtract(u'http://feeds.feedburner.com/TechCrunch', 
+  u'category[1]', [TContent(u'Social')])
+TExtract(u'http://feeds.feedburner.com/TechCrunch', 
+  u'category[1]', [TContent(u'Enterprise')])
+TExtract(u'http://feeds.feedburner.com/TechCrunch', 
+  u'category[1]', [TContent(u'TC')])
+\end{verbatim}
 
 
 
@@ -184,7 +192,8 @@ TExtract(u'http://feeds.feedburner.com/TechCrunch', u'category[1]', [TContent(u'
 
 Possible future directions:
 \begin{itemize}
- \item authentication
+ \item authentication using OAuth
+ \item tcp over ssl
 \end{itemize}
 
 

@@ -40,6 +40,8 @@ def get_article_extracts( host, port, url, article_nums, xpath ):
 
   # format and send a json request over zmq socket
   jdata = json.dumps( {
+    "APPID" : "myawesomeapp",
+    "APIKEY": "mysecretapikey",
     "url":url,
     "article_nums": article_nums,
     "xpath": xpath

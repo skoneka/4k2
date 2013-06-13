@@ -34,6 +34,21 @@ sys.stderr.write("hello-" + now.strftime("%Y-%m-%d %H:%M") + "\n")
 
 sys.stdout.flush(); sys.stderr.flush()
 
+class InvalidCredentialsError(Exception):
+    '''thrown on Invalid authentication tokens''' 
+    pass
+
+def is_authenticated(appid, apikey):
+    '''a placeholder for proper accessing a database of registered api users'''
+    print appid, apikey
+    if appid == "myawesomeapp" and apikey == "mysecretapikey":
+        print True
+        return True
+    else:
+        print False
+        return False
+
+
 def extract( xml, article_nums, xpath ):
   '''extract( xml, article_nums, xpath ) -> dict
 
@@ -122,32 +137,37 @@ def server( port ):
     sys.stdout.flush(); sys.stderr.flush()
 
   while True:
-    jdata = None
-    xml = None
-    if RANK == 0:
-      #  Wait for a next json request from clients and decode json
-      message = socket.recv()
-      jdata = json_decoder.decode( message )
-      xml = urllib2.urlopen( jdata['url'] ).read()
-      logging.info( "Received json: " + str( jdata ) )
-
-    # send data to other RANKs
-    jdata = COMM.bcast( jdata, root=0 )
-    xml = COMM.bcast( xml, root=0 )
-    sys.stderr.write("bcast RANK %d\n" % RANK)
-    sys.stdout.flush(); sys.stderr.flush()
-
-    article_nums = jdata[ 'article_nums' ]
-    xpath = jdata[ 'xpath' ]
-
-    # do the magic - extract contents from articles based on xpath
-    extracts = extract( xml, article_nums, xpath )
-
-    # send extracts of articles down the pipe
-    if RANK == 0:
-      logging.info( 'Sending extracts ' + str( extracts ) )
-      jdata = json.dumps( extracts )
-      socket.send( jdata )
+    try:
+        jdata = None
+        xml = None
+        if RANK == 0:
+          #  Wait for a next json request from clients and decode json
+          message = socket.recv()
+          jdata = json_decoder.decode( message )
+          if not is_authenticated( jdata['APPID'], jdata['APIKEY']):
+              raise InvalidCredentialsError
+          xml = urllib2.urlopen( jdata['url'] ).read()
+          logging.info( "Received json: " + str( jdata ) )
+    
+        # send data to other RANKs
+        jdata = COMM.bcast( jdata, root=0 )
+        xml = COMM.bcast( xml, root=0 )
+        sys.stderr.write("bcast RANK %d\n" % RANK)
+        sys.stdout.flush(); sys.stderr.flush()
+    
+        article_nums = jdata[ 'article_nums' ]
+        xpath = jdata[ 'xpath' ]
+    
+        # do the magic - extract contents from articles based on xpath
+        extracts = extract( xml, article_nums, xpath )
+    
+        # send extracts of articles down the pipe
+        if RANK == 0:
+          logging.info( 'Sending extracts ' + str( extracts ) )
+          jdata = json.dumps( extracts )
+          socket.send( jdata )
+    except InvalidCredentialsError:
+        logging.warning("Invalid credentials")
 
 
 

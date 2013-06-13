@@ -22,7 +22,6 @@ python client.py \
 Output:
 
 Sending request {"url": "http://feeds.feedburner.com/TechCrunch", "xpath": "category[1]", "article_nums": [2, 5, 6, 9, 10]}
-
 TExtract(u'http://feeds.feedburner.com/TechCrunch', u'category[1]', [TContent(u'Fundings & Exits')])
 TExtract(u'http://feeds.feedburner.com/TechCrunch', u'category[1]', [TContent(u'Startups')])
 TExtract(u'http://feeds.feedburner.com/TechCrunch', u'category[1]', [TContent(u'Social')])
