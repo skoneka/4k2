@@ -4,6 +4,10 @@ Requirements
 ============
 mpi4py pyzmq sqlalchemy
 
+apt-get install python-zmq python-lxml python-sqlalchemy python-pip
+pip install mpi4py
+openmpi-bin libopenmpi-dev build-essentials python-dev 
+
 Deployment
 ==========
 

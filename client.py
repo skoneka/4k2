@@ -27,7 +27,7 @@ import dbsupport
 # Connect to a server over zmq socket. Send a request for contents (xpath)
 # from specific articles (article_nums) published on a rss feed (url).
 # Fetch the reponse back.
-def get_article_extracts( port, url, article_nums, xpath ):
+def get_article_extracts( host, port, url, article_nums, xpath ):
   '''get_article_extracts( port, url, article_nums, xpath ) -> dict
 
   Return a dict containing rss article extracts.
@@ -36,7 +36,7 @@ def get_article_extracts( port, url, article_nums, xpath ):
   # connect to a server
   context = zmq.Context()
   socket = context.socket( zmq.REQ )
-  socket.connect ( "tcp://localhost:%s" % port )
+  socket.connect ( "tcp://%s:%s" % (host, port) )
 
   # format and send a json request over zmq socket
   jdata = json.dumps( {
@@ -61,6 +61,10 @@ def main():
 -f http://feeds.feedburner.com/TechCrunch \
 -n 2,5,6,9,10 -s category' )
 
+  parser.add_option( "-H", None,
+    action="store",
+    dest="host",
+    default="localhost" )
   parser.add_option( "-f", None,
     action="store",
     dest="url",
@@ -76,7 +80,7 @@ def main():
 
   options = parser.parse_args()[0]
 
-  extracts = get_article_extracts( PORT,
+  extracts = get_article_extracts( options.host, PORT,
     options.url,
     [ int( x ) for x in options.article_nums.split( ',' ) ],
     options.xpath )

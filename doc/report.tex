@@ -137,35 +137,49 @@ class DbSupport( object )
 %\verbatimfileinclude{server.py}
 %\verbatimfileinclude{dbsupport.py}
 
-\section{Experiments}
+\section{Installation}
+Install required packages on all hosts.
+\begin{alltt}
+apt-get install openmpi-bin libopenmpi-dev build-essentials python-dev python-zmq python-lxml python-sqlalchemy python-pip
+pip install mpi4py
+\end{alltt}
 
-\begin{verbatim}
+If server is supposed to run on multiple machines create a hostfile where server.py will be started.
+The username should be the same on all machines. 4k2 directory should be the same on all machines.
+\begin{alltt}
+root@voyage:~/4k2# cat ~/hostfile
+192.168.0.17
+192.168.0.19
+\end{alltt}
+
+
+
+\section{Experiments}
+Start server on a machine. Include hostfile if running on multiple machines.
+\begin{alltt}
+mpirun -np 4 --hostfile ~/hostfile python server.py
+\end{alltt}
 
 Extracting articles from a remote rss feed.
-
-python client.py \
+\begin{alltt}
+ python client.py \
 -f http://feeds.feedburner.com/TechCrunch \
 -n 2,5,6,9,10 -s category[1]
+\end{alltt}
 
-Output:
 
 Extracting articles from a file located on the filesystem
-python client.py \
+\begin{alltt}
+ python client.py \
 -f file://`pwd`/rss/TechCrunch.rss
 -n 2,5,6,9,10 -s title
-
-Output
-
- 
-\end{verbatim}
-
+\end{alltt}
 
 
 \section{Conclusion and future owrk}
 
 Possible future directions:
 \begin{itemize}
- \item add support for multiple hosts
  \item authentication
 \end{itemize}
 
@@ -178,10 +192,9 @@ Possible future directions:
 \end{alltt}
 
 \subsection{server.py}
-\begin{alltt}
+\begin{verbatim}
 \input{../server.py}
-\end{alltt}
-
+\end{verbatim}
 
 \subsection{dbsupport.py}
 \begin{alltt}

@@ -19,8 +19,20 @@ import zmq
 from lxml import etree
 from mpi4py import MPI
 import logging
+import sys
+
+import datetime
+
+now = datetime.datetime.now()
 
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
+
+
+sys.stderr = open("/tmp/stderr-4k2-server", 'w')
+sys.stdout = open("/tmp/stdout-4k2-client", 'w')
+sys.stderr.write("hello-" + now.strftime("%Y-%m-%d %H:%M") + "\n")
+
+sys.stdout.flush(); sys.stderr.flush()
 
 def extract( xml, article_nums, xpath ):
   '''extract( xml, article_nums, xpath ) -> dict
@@ -97,6 +109,8 @@ def server( port ):
   ...
   }
   '''
+  sys.stderr.write("hello RANK %d\n" % RANK)
+  sys.stdout.flush(); sys.stderr.flush()
   if RANK == 0:
     json_decoder = json.JSONDecoder()
 
@@ -104,6 +118,8 @@ def server( port ):
     context = zmq.Context()
     socket = context.socket( zmq.REP )
     socket.bind( "tcp://*:%s" % port )
+    sys.stderr.write("server starting at %s\n" % port)
+    sys.stdout.flush(); sys.stderr.flush()
 
   while True:
     jdata = None
@@ -118,6 +134,8 @@ def server( port ):
     # send data to other RANKs
     jdata = COMM.bcast( jdata, root=0 )
     xml = COMM.bcast( xml, root=0 )
+    sys.stderr.write("bcast RANK %d\n" % RANK)
+    sys.stdout.flush(); sys.stderr.flush()
 
     article_nums = jdata[ 'article_nums' ]
     xpath = jdata[ 'xpath' ]
