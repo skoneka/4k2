@@ -4,24 +4,30 @@ Requirements
 ============
 mpi4py pyzmq sqlalchemy
 
-apt-get install python-zmq python-lxml python-sqlalchemy python-pip
+apt-get install openmpi-bin libopenmpi-dev build-essentials python-dev python-zmq python-lxml python-sqlalchemy python-pip
 pip install mpi4py
-openmpi-bin libopenmpi-dev build-essentials python-dev 
+
 
 Deployment
 ==========
 
 Start server:
-mpiexec -n 3 python server.py
-
-Send requests with client:
+mpirun -np 4 --hostfile ~/hostfile python server.py
+Send requests to server.py:
 python client.py \
+-H <server address> \
 -f http://feeds.feedburner.com/TechCrunch \
 -n 2,5,6,9,10 -s category[1]
 
-python client.py \
--f file://`pwd`/rss/TechCrunch.rss
--n 2,5,6,9,10 -s title
+Output:
+
+Sending request {"url": "http://feeds.feedburner.com/TechCrunch", "xpath": "category[1]", "article_nums": [2, 5, 6, 9, 10]}
+
+TExtract(u'http://feeds.feedburner.com/TechCrunch', u'category[1]', [TContent(u'Fundings & Exits')])
+TExtract(u'http://feeds.feedburner.com/TechCrunch', u'category[1]', [TContent(u'Startups')])
+TExtract(u'http://feeds.feedburner.com/TechCrunch', u'category[1]', [TContent(u'Social')])
+TExtract(u'http://feeds.feedburner.com/TechCrunch', u'category[1]', [TContent(u'Enterprise')])
+TExtract(u'http://feeds.feedburner.com/TechCrunch', u'category[1]', [TContent(u'TC')])
 
 Hacking
 =======

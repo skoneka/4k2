@@ -163,17 +163,21 @@ mpirun -np 4 --hostfile ~/hostfile python server.py
 Extracting articles from a remote rss feed.
 \begin{alltt}
  python client.py \
+-H 192.168.0.17 \
 -f http://feeds.feedburner.com/TechCrunch \
 -n 2,5,6,9,10 -s category[1]
 \end{alltt}
 
-
-Extracting articles from a file located on the filesystem
+Example client output. 
 \begin{alltt}
- python client.py \
--f file://`pwd`/rss/TechCrunch.rss
--n 2,5,6,9,10 -s title
+Sending request {"url": "http://feeds.feedburner.com/TechCrunch", "xpath": "category[1]", "article_nums": [2, 5, 6, 9, 10]}
+TExtract(u'http://feeds.feedburner.com/TechCrunch', u'category[1]', [TContent(u'Fundings & Exits')])
+TExtract(u'http://feeds.feedburner.com/TechCrunch', u'category[1]', [TContent(u'Startups')])
+TExtract(u'http://feeds.feedburner.com/TechCrunch', u'category[1]', [TContent(u'Social')])
+TExtract(u'http://feeds.feedburner.com/TechCrunch', u'category[1]', [TContent(u'Enterprise')])
+TExtract(u'http://feeds.feedburner.com/TechCrunch', u'category[1]', [TContent(u'TC')])
 \end{alltt}
+
 
 
 \section{Conclusion and future owrk}

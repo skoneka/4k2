@@ -61,7 +61,7 @@ class DbSupport( object ):
     '''Write records to database'''
     try:
       for content in extracts.itervalues():
-        print content
+        #print content
         self.session.add( TExtract( url, xpath, content ) )
       self.session.commit()
     except:
