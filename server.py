@@ -28,8 +28,8 @@ now = datetime.datetime.now()
 logging.basicConfig(format='%(levelname)s:%(message)s', level=logging.DEBUG)
 
 
-sys.stderr = open("/tmp/stderr-4k2-server", 'w')
-sys.stdout = open("/tmp/stdout-4k2-client", 'w')
+sys.stderr = open("/tmp/stderr-4k2-server", 'a')
+sys.stdout = open("/tmp/stdout-4k2-client", 'a')
 sys.stderr.write("hello-" + now.strftime("%Y-%m-%d %H:%M") + "\n")
 
 sys.stdout.flush(); sys.stderr.flush()
@@ -42,10 +42,8 @@ def is_authenticated(appid, apikey):
     '''a placeholder for proper accessing a database of registered api users'''
     print appid, apikey
     if appid == "myawesomeapp" and apikey == "mysecretapikey":
-        print True
         return True
     else:
-        print False
         return False
 
 
@@ -177,7 +175,9 @@ if __name__ == '__main__':
   COMM = MPI.COMM_WORLD
   SIZE = COMM.Get_size()
   RANK = COMM.Get_rank()
+  NAME = MPI.Get_processor_name()
 
+  sys.stdout.write("Helloworld! I am process %d of %d on %s.\n" % (RANK,SIZE,NAME))
   server( PORT )
 
 

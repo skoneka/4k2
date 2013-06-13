@@ -3,12 +3,14 @@
 \usepackage{graphicx}
 \usepackage{graphics}
 \usepackage{alltt}
+\usepackage{verbatim}
+
 
 \usepackage[dvips]{hyperref}
 \title{Pararell and distribiuted programming}
 \author{Author: Artur Skonecki \\ Scientific supervisor: Zuzanna Krawczyk}
 
-\date{09/05/2013}
+\date{13/06/2013}
 
 \begin{document}
 
@@ -83,6 +85,12 @@ speeding up execution so it is taking advantage of concurrency features
 of modern systems. Server requires authentication tokens appid and appkey.
 
 \begin{verbatim}
+class InvalidCredentialsError(Exception)
+    thrown on Invalid authentication tokens
+
+is_authenticated(appid, apikey)
+    a placeholder for proper accessing a database of registered api users
+
 server( port )
   Start a server listening for connections with zmq socket at 'port'
   for json requests from clients.
@@ -205,9 +213,9 @@ Possible future directions:
 \end{alltt}
 
 \subsection{server.py}
-\begin{verbatim}
-\input{../server.py}
-\end{verbatim}
+
+\verbatiminput{../server.py}
+
 
 \subsection{dbsupport.py}
 \begin{alltt}
